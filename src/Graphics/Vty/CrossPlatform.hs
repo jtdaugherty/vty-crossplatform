@@ -20,7 +20,14 @@ import Graphics.Vty.Config (VtyUserConfig)
 --
 -- This approach works fine for now with just two main platforms as
 -- options, but if we need to support a third, we'll probably need to
--- make this check more sophisticated.
+-- make this check more sophisticated. This approach also has a slight
+-- risk in that it may come to a different conclusion about the build
+-- platform than the Cabal "if os(...)" check. We could avoid that
+-- by using the Cabal API here to do OS detection, but that has the
+-- drawback that we'd then be depending on the Cabal library, and that
+-- gets to be a big pain when the version of Cabal we depend on happens
+-- to be different than the one used to build the 'cabal-install' that
+-- got used to do the build.
 #if defined(mingw32_HOST_OS) || defined(__MINGW32__)
 import qualified Graphics.Vty.Platform.Windows as Platform
 #else
