@@ -1,0 +1,25 @@
+cabal-version:      3.0
+name:               vty-crossplatform
+version:            0.1.0.0
+synopsis:           Cross-platform support for Vty
+description:        This package provides a generic interface for multiple
+                    Vty platforms in one package so you don't have to
+                    conditionally use @vty-unix@ or @vty-windows@.
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Jonathan Daugherty
+maintainer:         cygnus@foobox.com
+copyright:          (c) 2023 Jonathan Daugherty
+category:           Graphics
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+library
+    hs-source-dirs:   src
+    import:           warnings
+    default-language: Haskell2010
+    exposed-modules:  Graphics.Vty.CrossPlatform
+    build-depends:    base >= 4.8 && < 5
