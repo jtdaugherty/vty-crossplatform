@@ -3,7 +3,7 @@
 -- platform-independent way. If you need access to Vty internals,
 -- use the API from the @vty@ package. If you need access to
 -- platform-specific settings, it might be best to depend on and use the
--- platform-specific packages directly.
+-- platform-specific packages directly instead of using this package.
 module Graphics.Vty.CrossPlatform
   ( mkVty
   )
