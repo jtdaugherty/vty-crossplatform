@@ -4,7 +4,7 @@ version:            0.1.0.0
 synopsis:           Cross-platform support for Vty
 description:        This package provides a generic interface for multiple
                     Vty platforms in one package so you don't have to
-                    conditionally use @vty-unix@ or @vty-windows@.
+                    conditionally depend on them in your cabal file.
 license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Jonathan Daugherty
