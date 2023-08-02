@@ -31,12 +31,12 @@ library
 
     if os(darwin)
         build-depends:  vty-unix
-
-    if os(linux)
+    elif os(linux)
         build-depends:  vty-unix
-
-    if os(windows)
+    elif os(windows)
         build-depends:  vty-windows
+    else
+        build-depends:  unknown-vty-build-platform
 
 executable vty-rogue-demo
     if !flag(demos)
