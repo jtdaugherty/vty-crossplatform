@@ -37,6 +37,10 @@ import qualified Graphics.Vty.Platform.Unix as Platform
 -- | Build a 'Vty' handle with the specified configuration.
 --
 -- This dispatches to the appropriate platform-specific implementation
--- at build time based on the build environment.
-mkVty :: VtyUserConfig -> IO Vty
+-- at build time based on the build environment's operating system.
+mkVty :: VtyUserConfig
+      -- ^ The configuration to use, usually
+      -- 'Graphics.Vty.Config.defaultConfig' or the result of
+      -- 'Graphics.Vty.Config.userConfig'.
+      -> IO Vty
 mkVty = Platform.mkVty
