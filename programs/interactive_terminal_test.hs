@@ -3,24 +3,20 @@
 module Main where
 
 import Graphics.Vty
-import Graphics.Vty.Attributes
 import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.CrossPlatform.Testing (mkDefaultOutput)
 
 import Graphics.Vty.Inline
 
-import Graphics.Vty.Picture
-import Graphics.Vty.Output
-
 import Control.Concurrent (threadDelay)
-import Control.Exception
-import Control.Monad
+import Control.Exception ( SomeException, catch )
+import Control.Monad ( forM_, when )
 
 import Data.List ( lookup )
 import Data.Maybe ( isJust, fromJust )
 import Data.Monoid
-import Data.String.QQ
-import Data.Word
+import Data.String.QQ ( s )
+import Data.Word ( Word8 )
 
 import Foreign.Marshal.Array ( withArrayLen )
 
@@ -46,8 +42,8 @@ performs as expected with your terminal.
 This program produces a file named 
     |] ++ outputFilePath ++ [s| 
 in the current directory that contains the results for each test assertion. This
-can  be emailed to coreyoconnor@gmail.com and used by the VTY authors to improve
-support for your terminal. No personal information is contained in the report.
+can  be used by the VTY authors to improve support for your terminal.
+No personal information is contained in the report.
 
 Each test follows, more or less, the following format:
     0. A description of the test is printed which will include a detailed
@@ -74,13 +70,13 @@ Thanks for the help! :-D
 To exit the test early enter "q" anytime at the following menu screen.
 
 If any test fails then please post an issue to
-    https://github.com/coreyoconnor/vty/issues
+    https://github.com/jtdaugherty/vty/issues
 with the test_results.list file pasted into the issue. A suitable summary is:
 "interactive terminal test failure".
 |]
     waitForReturn
     results <- doTestMenu 1
-    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName )
+    envAttributes <- mapM ( \envName -> Control.Exception.catch ( (,) envName <$> Env.getEnv envName )
                                                 ( \ (_ :: SomeException) -> return (envName, "") )
                           )
                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
@@ -98,12 +94,12 @@ waitForReturn = do
     getLine
 
 testMenu :: [(String, Test)]
-testMenu = zip (map show [1..]) allTests
+testMenu = zip (map show [1:: Int ..]) allTests
 
 doTestMenu :: Int -> IO [(String, Bool)]
 doTestMenu nextID
     | nextID > length allTests = do
-        putStrLn $ "Done! Please email the " ++ outputFilePath ++ " file to coreyoconnor@gmail.com"
+        putStrLn $ "Done! If there were problems, feel free to open an issue at https://github.com/jtdaugherty/vty/issues and paste the contents of the file " <> outputFilePath
         return []
     | otherwise = do
         displayTestMenu
@@ -112,8 +108,8 @@ doTestMenu nextID
         putStrLn "q (or control-C) to quit."
         putStr "> "
         hFlush stdout
-        s <- getLine >>= return . filter (/= '\n')
-        case s of
+        str <- filter (/= '\n') <$> getLine
+        case str of
             "q" -> return mempty
             "" -> do
                 r <- runTest $ show nextID
@@ -141,16 +137,18 @@ runTest i = do
     r <- confirmResults t
     return (testID t, r)
 
+defaultSuccessConfirmResults :: IO Bool
 defaultSuccessConfirmResults = do
     putStr "\n"
     putStr "[Y/n] "
     hFlush stdout
     r <- getLine
-    case r of
-        ""  -> return True
-        "y" -> return True
-        "Y" -> return True
-        "n" -> return False
+    return $ case r of
+        ""  -> True
+        "y" -> True
+        "Y" -> True
+        "n" -> False
+        _ -> False
 
 data Test = Test
     { testName :: String
@@ -160,6 +158,7 @@ data Test = Test
     , confirmResults :: IO Bool
     }
 
+allTests :: [Test]
 allTests
     = [ reserveOutputTest
       , displayBoundsTest0
@@ -192,6 +191,7 @@ allTests
       , layer1
       ]
 
+reserveOutputTest :: Test
 reserveOutputTest = Test
     { testName = "Initialize and reserve terminal output then restore previous state."
     , testID = "reserveOutputTest"
@@ -225,6 +225,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+displayBoundsTest0 :: Test
 displayBoundsTest0 = Test
     { testName = "Verify display bounds are correct test 0: Using spaces."
     , testID = "displayBoundsTest0"
@@ -235,7 +236,7 @@ displayBoundsTest0 = Test
         let row0 = replicate (fromEnum w) 'X' ++ "\n"
             rowH = replicate (fromEnum w - 1) 'X'
             rowN = "X" ++ replicate (fromEnum w - 2) ' ' ++ "X\n"
-            image = row0 ++ (concat $ replicate (fromEnum h - 2) rowN) ++ rowH
+            image = row0 ++ concat ( replicate (fromEnum h - 2) rowN) ++ rowH
         putStr image
         hFlush stdout
         getLine
@@ -246,6 +247,7 @@ displayBoundsTest0 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+displayBoundsTest1 :: Test
 displayBoundsTest1 = Test
     { testName = "Verify display bounds are correct test 0: Using cursor movement."
     , testID = "displayBoundsTest1"
@@ -275,6 +277,7 @@ displayBoundsTest1 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+displayBoundsTest2 :: Test
 displayBoundsTest2 = Test
     { testName = "Verify display bounds are correct test 0: Using Image ops."
     , testID = "displayBoundsTest2"
@@ -298,6 +301,7 @@ displayBoundsTest2 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+displayBoundsTest3 :: Test
 displayBoundsTest3 = Test
     { testName = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
     , testID = "displayBoundsTest3"
@@ -329,6 +333,7 @@ displayBoundsTest3 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+displayBoundsTestSummary :: Bool -> IO ()
 displayBoundsTestSummary hasCursor = do
     putStr $ [s|
 Once return is pressed:
@@ -366,6 +371,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
 
+genericOutputMatchConfirm :: IO Bool
 genericOutputMatchConfirm = do
     putStr $ [s|
 Did the test output match the description?
@@ -410,6 +416,7 @@ iso10646Txt0 = map toEnum
     , 65
     ]
 
+unicodeSingleWidth0 :: Test
 unicodeSingleWidth0 = Test
     { testName = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
     , testID = "unicodeSingleWidth0"
@@ -429,6 +436,7 @@ unicodeSingleWidth0 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+unicodeSingleWidth1 :: Test
 unicodeSingleWidth1 = Test
     { testName = "Verify terminal can display unicode single-width characters. (Image ops)"
     , testID = "unicodeSingleWidth1"
@@ -449,6 +457,7 @@ unicodeSingleWidth1 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+unicodeSingleWidthSummary :: IO ()
 unicodeSingleWidthSummary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -492,6 +501,7 @@ utf8Txt1 = [ [0xe4,0xbd,0xa0]
 iso10646Txt1 :: String
 iso10646Txt1 = map toEnum [20320,22909,21527]
 
+unicodeDoubleWidth0 :: Test
 unicodeDoubleWidth0 = Test
     { testName = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
     , testID = "unicodeDoubleWidth0"
@@ -511,6 +521,7 @@ unicodeDoubleWidth0 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+unicodeDoubleWidth1 :: Test
 unicodeDoubleWidth1 = Test
     { testName = "Verify terminal can display unicode double-width characters. (Image ops)"
     , testID = "unicodeDoubleWidth1"
@@ -531,6 +542,7 @@ unicodeDoubleWidth1 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+unicodeDoubleWidthSummary :: IO ()
 unicodeDoubleWidthSummary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -558,13 +570,16 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
 
+allColors :: [(Color, String)]
 allColors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
 
+allBrightColors :: [(Color, String)]
 allBrightColors
     = zip [ brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite ]
           [ "bright black", "bright red", "bright green", "bright yellow", "bright blue", "bright magenta", "bright cyan", "bright white" ]
 
+attributesTest0 :: Test
 attributesTest0 = Test
     { testName = "Character attributes: foreground colors."
     , testID = "attributesTest0"
@@ -611,6 +626,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+attributesTest1 :: Test
 attributesTest1 = Test
     { testName = "Character attributes: background colors."
     , testID = "attributesTest1"
@@ -666,6 +682,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+attributesTest2 :: Test
 attributesTest2 = Test
     { testName = "Character attributes: Vivid foreground colors."
     , testID = "attributesTest2"
@@ -725,6 +742,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+attributesTest3 :: Test
 attributesTest3 = Test
     { testName = "Character attributes: Vivid background colors."
     , testID = "attributesTest3"
@@ -792,6 +810,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+attrCombos :: [(String, Attr -> Attr)]
 attrCombos =
     [ ( "default", id )
     , ( "bold", flip withStyle bold )
@@ -803,6 +822,7 @@ attrCombos =
     , ( "bold + blink + underline", flip withStyle (bold + blink + underline) )
     ]
 
+attributesTest4 :: Test
 attributesTest4 = Test
     { testName = "Character attributes: Bold; Blink; Underline."
     , testID = "attributesTest4"
@@ -855,6 +875,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+attributesTest5 :: Test
 attributesTest5 = Test
     { testName = "Character attributes: 240 color palette"
     , testID = "attributesTest5"
@@ -893,6 +914,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
+inlineTest0 :: Test
 inlineTest0 = Test
     { testName = "Verify styled output can be performed without clearing the screen."
     , testID = "inlineTest0"
@@ -912,6 +934,7 @@ The third line "line 3" should be drawn in the same style as the first line.
     , confirmResults = genericOutputMatchConfirm
     }
 
+inlineTest1 :: Test
 inlineTest1 = Test
     { testName = "Verify styled output can be performed without clearing the screen."
     , testID = "inlineTest1"
@@ -928,9 +951,10 @@ inlineTest1 = Test
     , confirmResults = genericOutputMatchConfirm
     }
 
+inlineTest2 :: Test
 inlineTest2 = Test
     { testName = "Verify styled output can be performed without clearing the screen."
-    , testID = "inlineTest1"
+    , testID = "inlineTest2"
     , testAction = do
         t <- mkDefaultOutput
         putStr "Not styled. "
@@ -985,7 +1009,7 @@ outputPicAndWait pic = do
 vertCropTest0 :: Test
 vertCropTest0 = Test
     { testName = "Verify bottom cropping works as expected with single column chars"
-    , testID = "cropTest0"
+    , testID = "vertCropTest0"
     , testAction = do
         let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsum
             block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsum
@@ -1002,7 +1026,7 @@ vertCropTest0 = Test
 vertCropTest1 :: Test
 vertCropTest1 = Test
     { testName = "Verify bottom cropping works as expected with double column chars"
-    , testID = "cropTest0"
+    , testID = "vertCropTest1"
     , testAction = do
         let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
             block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsumChinese
@@ -1019,7 +1043,7 @@ vertCropTest1 = Test
 vertCropTest2 :: Test
 vertCropTest2 = Test
     { testName = "Verify top cropping works as expected with single column chars"
-    , testID = "cropTest2"
+    , testID = "vertCropTest2"
     , testAction = do
         let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsum
             block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsum - 2) lorumIpsum
@@ -1036,7 +1060,7 @@ vertCropTest2 = Test
 vertCropTest3 :: Test
 vertCropTest3 = Test
     { testName = "Verify top cropping works as expected with double column chars"
-    , testID = "cropTest0"
+    , testID = "vertCropTest3"
     , testAction = do
         let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
             block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsumChinese - 2 ) lorumIpsumChinese
@@ -1053,7 +1077,7 @@ vertCropTest3 = Test
 horizCropTest0 :: Test
 horizCropTest0 = Test
     { testName = "Verify right cropping works as expected with single column chars"
-    , testID = "cropTest0"
+    , testID = "horizCropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
             croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
@@ -1070,7 +1094,7 @@ horizCropTest0 = Test
 horizCropTest1 :: Test
 horizCropTest1 = Test
     { testName = "Verify right cropping works as expected with double column chars"
-    , testID = "cropTest0"
+    , testID = "horizCropTest1"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
             croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
@@ -1087,7 +1111,7 @@ horizCropTest1 = Test
 horizCropTest2 :: Test
 horizCropTest2 = Test
     { testName = "Verify left cropping works as expected with single column chars"
-    , testID = "cropTest0"
+    , testID = "horizCropTest2"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
             croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
@@ -1104,7 +1128,7 @@ horizCropTest2 = Test
 horizCropTest3 :: Test
 horizCropTest3 = Test
     { testName = "Verify right cropping works as expected with double column chars"
-    , testID = "cropTest0"
+    , testID = "horizCropTest3"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
             croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
@@ -1160,17 +1184,17 @@ cheesyAnim0 i background = do
     reserveDisplay t
     bounds <- displayBounds t
     d <- displayContext t bounds
-    forM_ [0..2] $ \t -> do
-      forM_ [0..100] $ \t -> do
-        let i_offset = translate (t `mod` fst bounds)
-                                 (t `div` 2 `mod` snd bounds)
+    forM_ [0..2] $ \rep -> do
+      forM_ [0..100] $ \tick -> do
+        let i_offset = translate (tick `mod` fst bounds)
+                                 (tick `div` 2 `mod` snd bounds)
                                  i
         let pic = picForLayers $ i_offset : background
         outputPicture d pic
         threadDelay 50000
-      forM_ [0..100] $ \t -> do
-        let i_offset = translate (t * (-1) `mod` fst bounds)
-                                 (t * (-1) `div` 2 `mod` snd bounds)
+      forM_ [0..100] $ \tick -> do
+        let i_offset = translate (tick * (-1) `mod` fst bounds)
+                                 (tick * (-1) `div` 2 `mod` snd bounds)
                                  i
         let pic = picForLayers $ i_offset : background
         outputPicture d pic
