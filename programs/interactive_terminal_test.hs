@@ -10,9 +10,8 @@ import Graphics.Vty.Inline
 
 import Control.Concurrent (threadDelay)
 import Control.Exception ( SomeException, catch )
-import Control.Monad ( forM_, when )
+import Control.Monad ( forM_, when, void )
 
-import Data.List ( lookup )
 import Data.Maybe ( isJust, fromJust )
 import Data.Monoid
 import Data.String.QQ ( s )
@@ -87,11 +86,11 @@ with the test_results.list file pasted into the issue. A suitable summary is:
     releaseTerminal t
     writeFile outputFilePath resultsTxt
 
-waitForReturn :: IO String
+waitForReturn :: IO ()
 waitForReturn = do
     putStr "\n(press return to continue)"
     hFlush stdout
-    getLine
+    void getLine
 
 testMenu :: [(String, Test)]
 testMenu = zip (map show [1:: Int ..]) allTests
@@ -111,13 +110,13 @@ doTestMenu nextID
         str <- filter (/= '\n') <$> getLine
         case str of
             "q" -> return mempty
-            "" -> do
-                r <- runTest $ show nextID
-                rs <- doTestMenu ( nextID + 1 )
-                return $ r : rs
             i | isJust ( lookup i testMenu ) -> do
                 r <- runTest i
                 rs <- doTestMenu ( read i + 1 )
+                return $ r : rs
+            _ -> do
+                r <- runTest $ show nextID
+                rs <- doTestMenu ( nextID + 1 )
                 return $ r : rs
         where
             displayTestMenu
@@ -203,7 +202,7 @@ reserveOutputTest = Test
         putStrLn "Line 3"
         putStrLn "Line 4 (press return)"
         hFlush stdout
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -239,7 +238,7 @@ displayBoundsTest0 = Test
             image = row0 ++ concat ( replicate (fromEnum h - 2) rowN) ++ rowH
         putStr image
         hFlush stdout
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -269,7 +268,7 @@ displayBoundsTest1 = Test
         let rowH = replicate (fromEnum w - 1) 'X'
         putStr rowH
         hFlush stdout
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -293,7 +292,7 @@ displayBoundsTest2 = Test
             pic = (picForImage image) { picCursor = Cursor (w - 1) (h - 1) }
         d <- displayContext t bounds
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -324,7 +323,7 @@ displayBoundsTest3 = Test
         let rowH = row0
         putStr rowH
         hFlush stdout
-        getLine
+        void getLine
         showCursor t
         releaseDisplay t
         releaseTerminal t
@@ -428,7 +427,7 @@ unicodeSingleWidth0 = Test
         hPutStr stdout "\n"
         hPutStr stdout "0123456789\n"
         hFlush stdout
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -449,7 +448,7 @@ unicodeSingleWidth1 = Test
             line1 = string defAttr "0123456789"
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -513,7 +512,7 @@ unicodeDoubleWidth0 = Test
         hPutStr stdout "\n"
         hPutStr stdout "012345\n"
         hFlush stdout
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -534,7 +533,7 @@ unicodeDoubleWidth1 = Test
             line1 = string defAttr "012345"
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -594,7 +593,7 @@ attributesTest0 = Test
             lineWithColor (c, cName) = string (defAttr `withForeColor` c) cName
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -641,7 +640,7 @@ attributesTest1 = Test
             lineWithColor (c, cName) = string (defAttr `withBackColor` c) cName
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -699,7 +698,7 @@ attributesTest2 = Test
             lineWithColor1 (c, cName) = string (defAttr `withForeColor` c) cName
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -759,7 +758,7 @@ attributesTest3 = Test
             lineWithColor1 (c, cName) = string (defAttr `withBackColor` c) cName
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -837,7 +836,7 @@ attributesTest4 = Test
             lineWithAttrs (desc, attrF) = string (attrF defAttr) desc
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -889,7 +888,7 @@ attributesTest5 = Test
             splitColorImages is = (take 20 is ++ [string defAttr " "]) : (splitColorImages (drop 20 is))
         d <- displayBounds t >>= displayContext t
         outputPicture d pic
-        getLine
+        void getLine
         releaseDisplay t
         releaseTerminal t
         return ()
@@ -977,7 +976,7 @@ cursorHideTest0 = Test
         setCursorPos (outputIface vty) 5 5
         whileM (isResize <$> nextEvent vty)
         hideCursor $ outputIface vty
-        nextEvent vty
+        void $ nextEvent vty
         shutdown vty
         return ()
     , printSummary = putStr $ [s|
@@ -1001,7 +1000,7 @@ outputPicAndWait pic = do
     reserveDisplay t
     d <- displayBounds t >>= displayContext t
     outputPicture d pic
-    getLine
+    void getLine
     releaseDisplay t
     releaseTerminal t
     return ()
@@ -1166,9 +1165,9 @@ layer1 = Test
     , testAction = do
         let upperImage = vertCat $ map (string defAttr) lorumIpsumChinese
             block = resize 10 10 upperImage
-            layer0 = vertCat $ map (string defAttr) lorumIpsum
-            layer1 = charFill (defAttr `withBackColor` blue) '#' 1000 1000
-        cheesyAnim0 block [layer0, layer1]
+            l0 = vertCat $ map (string defAttr) lorumIpsum
+            l1 = charFill (defAttr `withBackColor` blue) '#' (1000::Int) 1000
+        cheesyAnim0 block [l0, l1]
     , printSummary = putStr $ [s|
     1. Verify the text block appears to be Chinese text moving on top a Latin text.
        Which is all on a background of '#' characters over blue.
@@ -1184,7 +1183,7 @@ cheesyAnim0 i background = do
     reserveDisplay t
     bounds <- displayBounds t
     d <- displayContext t bounds
-    forM_ [0..2] $ \rep -> do
+    forM_ [(0::Int)..2] $ \_ -> do
       forM_ [0..100] $ \tick -> do
         let i_offset = translate (tick `mod` fst bounds)
                                  (tick `div` 2 `mod` snd bounds)
