@@ -28,7 +28,7 @@ library
     exposed-modules:  Graphics.Vty.CrossPlatform
                     , Graphics.Vty.CrossPlatform.Testing
     build-depends:    base >= 4.8 && < 5,
-                      vty
+                      vty >= 6.0
 
     if os(darwin)
         build-depends:  vty-unix
