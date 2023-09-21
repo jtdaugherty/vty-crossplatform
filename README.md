@@ -5,7 +5,7 @@ This package provides a way to depend on the right platform-specific Vty
 package at build time by detecting the build environment's operating
 system.
 
-To use this package:
+To use this package *instead* of a specific platform package:
 
 * Add a package dependency on `vty-crossplatform`
 * Import `mkVty` from `Graphics.Vty.CrossPlatform`
