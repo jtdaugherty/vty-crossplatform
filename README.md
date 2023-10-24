@@ -17,8 +17,8 @@ package at compile time.
 At present, this provides support via the following platform-specific
 packages:
 
-* `vty-unix`
-* `vty-windows`
+* [vty-unix](https://github.com/jtdaugherty/vty-unix)
+* [vty-windows](https://github.com/chhackett/vty-windows)
 
 Adding more platform packages
 -----------------------------
