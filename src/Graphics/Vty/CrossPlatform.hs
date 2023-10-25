@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP #-}
 -- | This module exposes a simple API to initialize Vty in a
--- platform-independent way. If you need access to Vty internals,
--- use the API from the @vty@ package. If you need access to
+-- platform-independent way. This module only provides @mkVty@
+-- for initializing the terminal. The rest of the Vty API is
+-- accessed through the @vty@ package's API. If you need access to
 -- platform-specific settings, it might be best to depend on and use the
 -- platform-specific packages directly instead of using this package.
 module Graphics.Vty.CrossPlatform
