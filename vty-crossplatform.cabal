@@ -34,6 +34,10 @@ library
         build-depends:  vty-unix
     elif os(linux)
         build-depends:  vty-unix
+    elif os(freebsd) || os(openbsd) || os(netbsd) || os(dragonfly)
+        build-depends:  vty-unix
+    elif os(solaris) || os(aix) || os(hupx) || os(irix) || os(hurd)
+        build-depends:  vty-unix
     elif os(windows)
         build-depends:  vty-windows
     else
