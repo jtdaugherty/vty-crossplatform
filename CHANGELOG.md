@@ -1,3 +1,10 @@
+0.3.0.0
+=======
+
+Package changes:
+* Updated `vty` lower bound to 6.1. Updated testing code to build with
+  6.1.
+
 0.2.0.0
 =======
 
