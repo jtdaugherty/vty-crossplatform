@@ -1,3 +1,8 @@
+0.4.0.1
+=======
+
+* Updated to work with `vty-windows` 0.2.0.1.
+
 0.4.0.0
 =======
 

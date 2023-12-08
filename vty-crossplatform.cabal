@@ -39,7 +39,7 @@ library
     elif os(solaris) || os(aix) || os(hpux) || os(irix) || os(hurd)
         build-depends:  vty-unix
     elif os(windows)
-        build-depends:  vty-windows >= 0.2.0.0
+        build-depends:  vty-windows >= 0.2.0.1
     else
         build-depends:  unknown-vty-build-platform
 
