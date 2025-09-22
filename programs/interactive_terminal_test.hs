@@ -98,7 +98,7 @@ testMenu = zip (map show [1:: Int ..]) allTests
 doTestMenu :: Int -> IO [(String, Bool)]
 doTestMenu nextID
     | nextID > length allTests = do
-        putStrLn $ "Done! If there were problems, feel free to open an issue at https://github.com/jtdaugherty/vty/issues and paste the contents of the file " <> outputFilePath
+        putStrLn $ "Done! If there were problems, feel free to open an issue at https://github.com/jtdaugherty/vty-crossplatfrm/issues and paste the contents of the file " <> outputFilePath
         return []
     | otherwise = do
         displayTestMenu
