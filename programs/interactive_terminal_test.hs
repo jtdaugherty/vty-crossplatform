@@ -719,9 +719,6 @@ Once return is pressed:
 For instance, one line will be the word "magenta" and that word should be
 rendered in the magenta color.
 
-I'm not actually sure exactly what "vivid" means in this context. For xterm the
-vivid colors are brighter.
-
 Verify:
     * The first column: The foreground color matches the named color.
     * The second column: The foreground color matches the named color but is
@@ -779,9 +776,6 @@ Once return is pressed:
 
 For instance, one line will contain be the word "magenta" and the word should
 be rendered in the default foreground color over a magenta background.
-
-I'm not actually sure exactly what "vivid" means in this context. For xterm the
-vivid colors are brighter.
 
 Verify:
     * The first column: The background color matches the named color.
@@ -898,7 +892,7 @@ Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
     2. A 20 character wide and 12 row high block of color squares. This should look like a palette
-    of some sort. I'm not exactly sure if all color terminals use the same palette. I doubt it...
+    of some sort.
 
 Verify:
 
