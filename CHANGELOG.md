@@ -1,6 +1,12 @@
-0.4.0.1
+0.5.0.0
 =======
 
+* Addressed a security issue that would have allowed a malicious third
+  party to upload a 'unknown-vty-build-platform' package to Hackage to
+  introduce malicious code on platforms where 'vty-crossplatform' isn't
+  supported. Now, instead of failing to build against a fake package for
+  build error readability purposes, 'buildable' is set to 'False' to
+  fail the build more directly.
 * Updated to work with `vty-windows` 0.2.0.1.
 
 0.4.0.0
