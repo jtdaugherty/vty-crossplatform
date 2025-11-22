@@ -41,7 +41,7 @@ library
     elif os(windows)
         build-depends:  vty-windows >= 0.2.0.1
     else
-        build-depends:  unknown-vty-build-platform
+        Buildable: False
 
 executable vty-rogue-demo
     if !flag(demos)
